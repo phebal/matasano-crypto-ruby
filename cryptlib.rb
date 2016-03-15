@@ -27,8 +27,26 @@ def xor_string(s1, s2)
   hex2string(xor_hex(str2hex(s1), str2hex(s2)))
 end
 
+def pad(str, size)
+  raise "Bad #{str} or #{size}" if str.length == 0 || size < str.length
+  pad_size = size - str.length
+  str +  pad_size.chr * pad_size
+end
+
+def split_to_chunks_and_pad(str, size)
+  chunks = split_to_chunks(str, size)
+  if chunks.last.length != size
+    chunks[-1] = pad(chunks.last, size)
+  end
+  chunks
+end
+
 def split_to_chunks(str, size)
-  str.unpack("a#{size}" * (str.length/size))
+  chunks = str.unpack("a#{size}" * (str.length/size))
+  if reminder = str.length % size
+    chunks << str[-reminder..-1]
+  end
+  chunks
 end
 
 def find_repeating_blocks(str, size)
@@ -52,6 +70,7 @@ def decrypt_ecb(msg, key)
   cipher.decrypt
 
   cipher.key = key
+  #cipher.padding = 0
   crypt = cipher.update(msg)
   crypt << cipher.final
   crypt
