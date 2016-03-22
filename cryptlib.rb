@@ -49,6 +49,26 @@ def split_to_chunks(str, size)
   chunks
 end
 
+def first_consecutsve_repeating_blocks(str, size)
+  chunks = str.unpack("a#{size}" * (str.length/size))
+  previous = chunks.delete_at(0)
+  repeats = []
+  chunks.each_with_index do |current, idx|
+    if previous == current
+      if repeats.empty?
+        repeats = [idx - 1, idx]
+      else
+        repeats << idx
+      end
+    else
+      # Return first series of consecutive blocks
+      break unless repeats.empty?
+    end
+    previous = current
+  end
+  repeats
+end
+
 def find_repeating_blocks(str, size)
   chunks = str.unpack("a#{size}" * (str.length/size))
   repeats = []
