@@ -16,7 +16,7 @@ end
 
 def oracle_dictionary(key, padding, block_size)
   raise "Bad padding #{padding}" unless padding.length == (block_size - 1)
-  @dictionary ||= 128.times.inject({}) do |h, num|
+  128.times.inject({}) do |h, num|
     msg = padding + num.chr
     crypt = encrypt_ecb(msg, key)[0..block_size - 1]
     h[crypt] = num.chr
@@ -50,19 +50,33 @@ def create_repeating_blocks(msg, key, block_size)
 end
 
 def break_cypher(msg, key, block_size, prefix_size, pad_block_start)
-  extra_pad = prefix_size % block_size
-  pad_size = extra_pad + (block_size - 1)
-  chunk = msg.length.times.map do |i|
+  extra_pad_size = pad_block_start - prefix_size
+  pad_size = extra_pad_size + (block_size - 1)
+  decrypted = ""
+  dict_pad = 'A' * 15
+  msg_length = encryption_oracle(msg, key, '')[prefix_size..-1].length
+  (msg_length/block_size.to_f).ceil.times do |block_nr|
     pad_text = 'A' * pad_size
-    crypt = encryption_oracle(msg[i], key, pad_text)
-    pad_block_end = pad_block_start + block_size - 1
-    chunk = crypt[pad_block_start..pad_block_end]
-    dict_pad = pad_text[extra_pad..-1]
-    oracle_dictionary(key, dict_pad, block_size)[chunk]
-  end.join
+    block_start = pad_block_start + (block_nr * block_size)
+    block_end = block_start + block_size - 1
+
+    (block_size - 1).downto(0) do |block_idx|
+      crypt = encryption_oracle(msg, key, pad_text)
+      chunk = crypt[block_start..block_end]
+      plain_char = oracle_dictionary(key, dict_pad, block_size)[chunk]
+      return decrypted if plain_char.nil?
+
+      pad_text.chop!
+      dict_pad.slice!(0)
+      dict_pad << plain_char
+      decrypted << plain_char
+    end
+  end
+  decrypted
 end
 
 block_size = 16
 prefix, pad_block_start = find_prefix_length(target, key, block_size)
-puts break_cypher(target, key, block_size, prefix, pad_block_start)
+plain = break_cypher(target, key, block_size, prefix, pad_block_start)
+puts plain
 
