@@ -33,6 +33,17 @@ def pad(str, size)
   str +  pad_size.chr * pad_size
 end
 
+def unpad(str, size=nil)
+  size = str.length if size.nil?
+  raise "Bad #{str.inspect} or #{size}" if str.length == 0 || size != str.length
+  pad_size = str2hex(str[-1]).to_i
+  raise "Bad pad #{str.inspect}" if pad_size >= size
+  str[-pad_size..-1].chars.each do |ch|
+    raise "Bad pad #{str.inspect}" if ch != str[-1]
+  end
+  str[0..-pad_size-1]
+end
+
 def split_to_chunks_and_pad(str, size)
   chunks = split_to_chunks(str, size)
   if chunks.last.length != size
@@ -43,7 +54,7 @@ end
 
 def split_to_chunks(str, size)
   chunks = str.unpack("a#{size}" * (str.length/size))
-  if reminder = str.length % size
+  if (reminder = str.length % size) > 0
     chunks << str[-reminder..-1]
   end
   chunks
