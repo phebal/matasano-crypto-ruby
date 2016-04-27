@@ -28,8 +28,8 @@ def xor_string(s1, s2)
 end
 
 def pad(str, size)
-  raise "Bad #{str} or #{size}" if str.length == 0 || size < str.length
-  pad_size = size - str.length
+  raise "Bad #{str} or #{size}" if str.length == 0
+  pad_size = size - (str.length % 16)
   str +  pad_size.chr * pad_size
 end
 
