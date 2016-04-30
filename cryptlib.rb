@@ -114,7 +114,7 @@ def decrypt_cbc_lib(msg, key, iv)
   cipher.key = key
   cipher.iv = iv
   crypt = cipher.update(msg)
-  cipher.padding = 0
+  #cipher.padding = 0
   crypt << cipher.final
   crypt
 end

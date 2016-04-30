@@ -32,7 +32,6 @@ def insert_admin
   msg[37] = xor_string(xor_string(msg[37], ','), ';')
   # ~ on in position 43 needs to become =
   msg[43] = xor_string(xor_string(msg[43], '~'), '=')
-  msg[33] = 'c'
   msg
 end
 
