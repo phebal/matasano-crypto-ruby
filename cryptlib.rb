@@ -14,8 +14,17 @@ def str2hex(str)
   str.unpack('H*').first
 end
 
-def xor_hex(h1, h2)
-  raise "Lengths do not match: #{h1.length} #{h2.length}" if h1.length != h2.length
+def xor_hex(h1, h2, matching=true)
+  if matching && h1.length != h2.length
+    raise "Lengths do not match: #{h1.length} #{h2.length}" if h1.length != h2.length
+  else
+    if h1.length > h2.length
+      h1 = h1[0..h2.length-1]
+    else
+      h2 = h2[0..h1.length-1]
+    end
+  end
+
   (0..h1.length - 1).map do |i|
     result = h1[i].to_i(16) ^ h2[i].to_i(16)
     raise "Bad xor result: #{result}" if result > 15
@@ -23,8 +32,8 @@ def xor_hex(h1, h2)
   end.join
 end
 
-def xor_string(s1, s2)
-  hex2string(xor_hex(str2hex(s1), str2hex(s2)))
+def xor_string(s1, s2, matching=true)
+  hex2string(xor_hex(str2hex(s1), str2hex(s2), matching))
 end
 
 def pad(str, size)
@@ -96,17 +105,6 @@ def find_repeating_blocks(str, size)
   repeats.inject(0) {|score, result| score + result[1].to_i }
 end
 
-def decrypt_ecb(msg, key)
-  cipher = OpenSSL::Cipher.new('AES-128-ECB')
-  cipher.decrypt
-
-  cipher.key = key
-  #cipher.padding = 0
-  crypt = cipher.update(msg)
-  crypt << cipher.final
-  crypt
-end
-
 def decrypt_cbc_lib(msg, key, iv)
   cipher = OpenSSL::Cipher.new('AES-128-CBC')
   cipher.decrypt
@@ -129,6 +127,17 @@ def encrypt_cbc_lib(msg, key, iv)
   crypt << cipher.final
 end
 
+def decrypt_ecb(msg, key)
+  cipher = OpenSSL::Cipher.new('AES-128-ECB')
+  cipher.decrypt
+
+  cipher.key = key
+  cipher.padding = 0
+  crypt = cipher.update(msg)
+  crypt << cipher.final
+  crypt
+end
+
 def encrypt_ecb(msg, key)
   cipher = OpenSSL::Cipher.new('AES-128-ECB')
   cipher.encrypt
@@ -137,6 +146,32 @@ def encrypt_ecb(msg, key)
   crypt = cipher.update(msg)
   crypt << cipher.final
 end
+
+def encrypt_aes(msg, key)
+  cipher = OpenSSL::Cipher.new('AES-128-ECB')
+  cipher.encrypt
+  cipher.key = key
+  cipher.update(msg)
+end
+
+def decrypt_aes(msg, key)
+  cipher = OpenSSL::Cipher.new('AES-128-ECB')
+  cipher.decrypt
+  cipher.key = key
+  cipher.padding = 0
+  crypt = cipher.update(msg)
+end
+
+def encrypt_ctr_aes_128(msg, key, nonce, block_size=16)
+  nonce = nonce[0..(block_size/2 - 1)]
+  key = key[0..block_size - 1]
+  split_to_chunks(msg, block_size).map.with_index do |chunk, idx|
+    counter = [idx].pack('Q').ljust(block_size/2, "\0")
+    crypto = encrypt_aes(nonce + counter, key)
+    xor_string(crypto, chunk, matching=false)
+  end.join
+end
+alias decrypt_ctr_aes_128 encrypt_ctr_aes_128
 
 def random_bytes(size)
   if (size).is_a?(Range)
