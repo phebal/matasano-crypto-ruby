@@ -38,7 +38,7 @@ end
 
 def pad(str, size)
   raise "Bad #{str} or #{size}" if str.length == 0
-  pad_size = size - (str.length % 16)
+  pad_size = size - (str.length % size)
   str +  pad_size.chr * pad_size
 end
 
