@@ -5,6 +5,7 @@ class MT19937
   def initialize(seed)
     @index = 624
     @mt = [0] * 624
+    @mt[0] = seed
     (1..623).each do |idx|
       # Shift previous int by 30 bits to the right
       # and xor with the previous bit
@@ -24,7 +25,7 @@ class MT19937
     result = result ^ ((result << 15) & 0xEFC60000)
     result = result ^ (result >> 18)
 
-    @index = (@index + 1) % 624
+    @index = (@index + 1)
 
     result & 0xFFFFFFFF
   end
